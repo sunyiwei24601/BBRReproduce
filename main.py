@@ -26,11 +26,8 @@ class MyTopo(Topo):
         """
         senderHosts = [self.addHost(f'hs{x}') for x in range(1, n+1)]
         receiverHosts = [self.addHost(f'hr{x}') for x in range(1, n+1)]
-        # leftSwitch = self.addSwitch('sa1')
-        # rightSwitch = self.addSwitch('sb1')
         s1 = self.addSwitch('s1')
 
-        # self.addLink(leftSwitch, rightSwitch)
         for senderHost in senderHosts:
             #link configuration could refer to mininet.link.config function
             self.addLink(senderHost, s1, delay=delay, loss=loss, bw=bw, jitter=jitter)
