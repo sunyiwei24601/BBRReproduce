@@ -1,0 +1,17 @@
+Using MarkovianCC.
+Will do slow start
+Using Automatic Mode with default delta = 0.5
+Assigning Source ID: 244857017
+Assuming training link rate of: 2666.67 pkts/sec
+Set min. RTT to 82.0925
+Connection Established.
+
+
+Data Successfully Transmitted
+	Throughput: 1.09524e+06 bytes/sec
+	Average Delay: 0.0455995 sec/packet
+	Completion time: 30sec
+
+	Avg. Throughput: 1.09524e+06 bytes/sec
+	Average Delay: 0.0455995 sec/packet
+Sender: 244857017, Flow: 1. Transmitted for 30000 ms.
