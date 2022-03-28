@@ -20,9 +20,9 @@ class MyTopo(Topo):
         Args:
             n (int, optional): nums of host pairs(n receiver and n sender). Defaults to 2.
             delay (str, optional): transmit delay (e.g. '1ms' ). Defaults to "10ms".
-            loss (int, optional): jitter (e.g. '1ms'). Defaults to 0.
-            bw (_type_, optional): bandwidth in mb/s (e.g. '10m'). Defaults to 10mbps.
-            jitter (_type_, optional): loss (e.g. '1%' ). Defaults to None.
+            loss (int, optional): loss (e.g. '1%' ). Defaults to 0.
+            bw (int, optional): bandwidth in mb/s (e.g. 10 for '10m'). Defaults to 10mbps.
+            jitter (_type_, optional): jitter (e.g. '1ms'). Defaults to None.
         """
         senderHosts = [self.addHost(f'hs{x}') for x in range(1, n+1)]
         receiverHosts = [self.addHost(f'hr{x}') for x in range(1, n+1)]
