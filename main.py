@@ -1,6 +1,6 @@
 from time import sleep
 import sys
-MININET_PATH = '/home/sunyiwei24601/Desktop/mininet'
+MININET_PATH = '/home/kyle/Desktop/mininet'
 sys.path.append(MININET_PATH)
 from mininet.net import Mininet
 from mininet.clean import cleanup
