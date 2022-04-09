@@ -132,4 +132,4 @@ dmypy.json
 # VSCODE
 .vscode/
 tf_logs/
-
+logs/
