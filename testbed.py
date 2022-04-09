@@ -38,108 +38,107 @@ class MyTopo(Topo):
         for recevierHost in receiverHosts:
             self.addLink(recevierHost, s1, delay=delay, loss=loss, bw=bw, jitter=jitter)
 
-def generate_network(n, bw, delay, loss, jitter):
-    """generate a network by given topology and return the network"""
-    cleanup()
-    topo = MyTopo(n=n, bw=bw, delay=delay, loss=loss, jitter=jitter)
-    net = Mininet(topo=topo, waitConnected=False, link=TCLink) # link=TCLink is important to enable link limits
-    print("links: ", topo.links())
-    print("hosts: ", topo.hosts())
-    net.start()
-    return net
+class CCTest():
+    def __init__(self):
+        pass
+    
+    def test_single_cc(self, cctype="cubic", n=2, delay="10ms", loss=0, bw=10, jitter=None, duration=60):
+        """create topology based on parameter, running iperf test between pairs, write the throughput records into files 
 
-def test_single_cc(cctype="cubic", n=2, delay="10ms", loss=0, bw=10, jitter=None, duration=60):
-    """create topology based on parameter, running iperf test between pairs, write the throughput records into files 
+        Args:
+            cctype(str): the algorithm used in test, options: "cubic", "bbr", "copa", "reno"
+            n (int, optional): _description_. Defaults to 2.
+            delay (str, optional): _description_. Defaults to "10ms".
+            loss (int, optional): _description_. Defaults to 0.
+            bw (_type_, optional): _description_. Defaults to None.
+            jitter (_type_, optional): _description_. Defaults to None.
+            duration(int): the last time for the test. Defaults to 60 seconds.
+        """
+        net = self.generate_network(n, bw, delay, loss, jitter)
+        
+        time_id = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) 
+        parameter_string = f"{cctype}_{n}hosts_delay={delay}_loss={loss}_bw={bw}_duration={duration}"
+        print(f"current Test: single cc algorithm test paramets: {parameter_string}")
+        logs_dirname = "./logs/" + time_id + "_" + parameter_string
 
-    Args:
-        cctype(str): the algorithm used in test, options: "cubic", "bbr", "copa", "reno"
-        n (int, optional): _description_. Defaults to 2.
-        delay (str, optional): _description_. Defaults to "10ms".
-        loss (int, optional): _description_. Defaults to 0.
-        bw (_type_, optional): _description_. Defaults to None.
-        jitter (_type_, optional): _description_. Defaults to None.
-        duration(int): the last time for the test. Defaults to 60 seconds.
-    """
-    net = generate_network(n, bw, delay, loss, jitter)
+        os.makedirs(logs_dirname, exist_ok=True)
+        
+        s1 = net.getNodeByName('s1')
+        s1.cmd(f'ethstats -t -n 1 -c {duration+20} > {logs_dirname}/ethstats.log  2>&1 &')
+        
+        for i in range(1, n+1):
+            senderHost, receiverHost = net.getNodeByName(f'hs{i}', f'hr{i}')
+            if cctype in ["cubic", "bbr"]:
+                self.run_kernel_test(senderHost, receiverHost, cctype, logs_dirname)
+            elif cctype == "copa":
+                self.run_copa_test(senderHost, receiverHost, cctype, logs_dirname)
+            else:
+                print("Unknown CC Algorithm: ", cctype)
+                
+        sleep(duration + 20 )
+        net.stop()
     
-    time_id = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) 
-    parameter_string = f"{cctype}_{n}hosts_delay={delay}_loss={loss}_bw={bw}_duration={duration}"
-    print(f"current Test: single cc algorithm test paramets: {parameter_string}")
-    logs_dirname = "./logs/" + time_id + "_" + parameter_string
+    def test_multi_cc(self, cc1, cc2, cc1_host_n=1, cc2_host_n=1, delay="10ms", loss=0, bw=10, jitter=None, duration=60):
+        """like test_single_cc, but use different cc algorithms on hosts
 
-    os.makedirs(logs_dirname, exist_ok=True)
-    
-    
-    s1 = net.getNodeByName('s1')
-    s1.cmd(f'ethstats -t -n 1 -c {duration+5} > {logs_dirname}/ethstats.log  2>&1 &')
-    
-    for i in range(1, n+1):
-        senderHost, receiverHost = net.getNodeByName(f'hs{i}', f'hr{i}')
-        if cctype in ["cubic", "bbr"]:
-            # first set the tcp cc algorithm on host
-            set_kernel_cc_algorithm(senderHost, cctype)
-            
-            # for cubic and bbr, use iperf scheme
-            output_file = logs_dirname + f'/sender{i}_iperf.log'
-            receiverHost.cmd(iperf_cmd(side="server"))
-            senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=output_file))
-        elif cctype == "copa":
-            # for copa, use genericCC's sender/receiver scheme
-            output_file = logs_dirname + f'/sender{i}_copa.log'
-            receiverHost.cmd(f'{genericCC_PATH}/receiver &')
-            senderHost.cmd(copa_sender_cmd(serverip=receiverHost.IP(), onduration=duration*1000, output_file=output_file))
-        else:
-            print("Unknown CC Algorithm: ", cctype)
-            
-    sleep(duration + 20 )
-    net.stop()
+        Args:
+            cc1 (_type_): first cc algorithm,  could be "cubic", "bbr", "copa", "reno", "bbrplus"
+            cc2 (_type_): like cc2
+            cc1_host_n (int, optional): number of hosts using first cc algorithm. Defaults to 1.
+            cc2_host_n (int, optional): _description_. Defaults to 1.
+            others: refer to test_single_cc parameters
+        """
+        net = self.generate_network(cc1_host_n + cc2_host_n, bw, delay, loss, jitter)
+        
+        time_id = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) 
+        parameter_string = f"{cc1}{cc1_host_n}_{cc2}{cc2_host_n}_delay={delay}_loss={loss}_bw={bw}_duration={duration}"
+        print(f"current Test: single cc algorithm test paramets: {parameter_string}")
+        logs_dirname = "./logs/" + time_id + "_" + parameter_string
 
-def test_multi_cc(cc1, cc2, cc1_host_n=1, cc2_host_n=1, delay="10ms", loss=0, bw=10, jitter=None, duration=60):
-    """like test_single_cc, but use different cc algorithms on hosts
+        os.makedirs(logs_dirname, exist_ok=True)
+        
+        
+        s1 = net.getNodeByName('s1')
+        s1.cmd(f'ethstats -t -n 1 -c {duration+5} > {logs_dirname}/ethstats.log  2>&1 &')
+        
+        cctypes = [cc1] * cc1_host_n + [cc2] * cc2_host_n
+        for _, cctype in enumerate(cctypes):
+            i = _ + 1
+            senderHost, receiverHost = net.getNodeByName(f'hs{i}', f'hr{i}')
+            if cctype in ["cubic", "bbr", "bbrplus"]:
+                self.run_kernel_test(senderHost, receiverHost, cctype, logs_dirname)
+            elif cctype == "copa":
+                self.run_copa_test(senderHost, receiverHost, cctype, logs_dirname)
+            else:
+                print("Unknown CC Algorithm: ", cctype)
+                
+        sleep(duration + 20 )
+        net.stop()
+    
+    def generate_network(self, n, bw, delay, loss, jitter):
+        """generate a network by given topology and return the network"""
+        cleanup()
+        topo = MyTopo(n=n, bw=bw, delay=delay, loss=loss, jitter=jitter)
+        net = Mininet(topo=topo, waitConnected=False, link=TCLink) # link=TCLink is important to enable link limits
+        print("links: ", topo.links())
+        print("hosts: ", topo.hosts())
+        net.start()
+        return net
 
-    Args:
-        cc1 (_type_): first cc algorithm,  could be "cubic", "bbr", "copa", "reno", "bbrplus"
-        cc2 (_type_): like cc2
-        cc1_host_n (int, optional): number of hosts using first cc algorithm. Defaults to 1.
-        cc2_host_n (int, optional): _description_. Defaults to 1.
-        others: refer to test_single_cc parameters
-    """
-    net = generate_network(cc1_host_n + cc2_host_n, bw, delay, loss, jitter)
+    def run_copa_test(self, senderHost, receiverHost, cctype, logs_dirname):
+        # for copa, use genericCC's sender/receiver scheme
+        output_file = logs_dirname + f'/{senderHost.name}_copa.log'
+        receiverHost.cmd(f'{genericCC_PATH}/receiver &')
+        senderHost.cmd(copa_sender_cmd(serverip=receiverHost.IP(), onduration=duration*1000, output_file=output_file))
     
-    time_id = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) 
-    parameter_string = f"{cc1}{cc1_host_n}_{cc2}{cc2_host_n}_delay={delay}_loss={loss}_bw={bw}_duration={duration}"
-    print(f"current Test: single cc algorithm test paramets: {parameter_string}")
-    logs_dirname = "./logs/" + time_id + "_" + parameter_string
-
-    os.makedirs(logs_dirname, exist_ok=True)
-    
-    
-    s1 = net.getNodeByName('s1')
-    s1.cmd(f'ethstats -t -n 1 -c {duration+5} > {logs_dirname}/ethstats.log  2>&1 &')
-    
-    cctypes = [cc1] * cc1_host_n + [cc2] * cc2_host_n
-    for _, cctype in enumerate(cctypes):
-        i = _ + 1
-        senderHost, receiverHost = net.getNodeByName(f'hs{i}', f'hr{i}')
-        if cctype in ["cubic", "bbr", "bbrplus"]:
-            # first set the tcp cc algorithm on host
-            set_kernel_cc_algorithm(senderHost, cctype)
-            
-            # for cubic and bbr, use iperf scheme
-            output_file = logs_dirname + f'/sender{i}_iperf.log'
-            receiverHost.cmd(iperf_cmd(side="server"))
-            senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=output_file))
-        elif cctype == "copa":
-            # for copa, use genericCC's sender/receiver scheme
-            output_file = logs_dirname + f'/sender{i}_copa.log'
-            receiverHost.cmd(f'{genericCC_PATH}/receiver &')
-            senderHost.cmd(copa_sender_cmd(serverip=receiverHost.IP(), onduration=duration*1000, output_file=output_file))
-        else:
-            print("Unknown CC Algorithm: ", cctype)
-            
-    sleep(duration + 20 )
-    net.stop()
-    
+    def run_kernel_test(self, senderHost, receiverHost, cctype, logs_dirname):
+        # first set the tcp cc algorithm on host
+        set_kernel_cc_algorithm(senderHost, cctype)
+        
+        # for cubic and bbr, use iperf scheme
+        output_file = logs_dirname + f'/{senderHost.name}_iperf.log'
+        receiverHost.cmd(iperf_cmd(side="server"))
+        senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=output_file))
 
 if __name__ == '__main__':
     n = 3
@@ -148,6 +147,9 @@ if __name__ == '__main__':
     bw = 10 #mbps
     loss = 3
     jitter = "200ms"
-    test_multi_cc("cubic", "copa", cc1_host_n=1, cc2_host_n=1, duration=30, bw=bw, delay=delay, loss=loss)
+    
+    t = CCTest()
+    # t.test_single_cc("cubic", n=3, delay='10ms', loss=3, bw=10, jitter=None, duration=30)
+    t.test_multi_cc("cubic", "copa", cc1_host_n=1, cc2_host_n=1, duration=30, bw=bw, delay=delay, loss=loss)
 
     
