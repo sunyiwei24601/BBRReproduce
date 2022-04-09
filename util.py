@@ -59,10 +59,10 @@ def copa_sender_cmd(serverip="", offduration=0, onduration=10000,
     command = f'{genericCC_PATH}/sender '
     if serverip:
         command += f'serverip={serverip} '
-    if offduration:
-        command += f'offduration={offduration} '
+    if offduration is not None:
+        command += f'offduration={offduration} ' # if not pass, will set default 5000
     if onduration:
-        command += f'onduration={onduration} '
+        command += f'onduration={onduration} ' 
     if cctype:
         command += f'cctype={cctype} '
     if delta:
