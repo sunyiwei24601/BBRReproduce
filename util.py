@@ -1,3 +1,4 @@
+genericCC_PATH = '~/Desktop/genericCC'
 
 def iperf_cmd(side="client",address="", interval=1, port=None, time=15, window_size=None, output_file=""):
     """a tool for concating parameters for iperf command, return the command string
@@ -31,8 +32,6 @@ def iperf_cmd(side="client",address="", interval=1, port=None, time=15, window_s
         if output_file:
             command += f"> {output_file} 2>&1 "
     return command + "&"
-
-genericCC_PATH = '~/Desktop/genericCC'
 
 def copa_sender_cmd(serverip="", offduration=0, onduration=10000, 
                     cctype="markovian", delta="0.5",
@@ -72,7 +71,6 @@ def copa_sender_cmd(serverip="", offduration=0, onduration=10000,
         command += f'> {output_file} 2>&1 '
     return command + "&"
 
-
 def set_kernel_cc_algorithm(host, algorithm):
     """set the cc algorithm on host kernel
 
@@ -85,8 +83,6 @@ def set_kernel_cc_algorithm(host, algorithm):
     
     print("Setting Result: ", result)
     
-
-
 if __name__ == '__main__':
     print(iperf_cmd(isClient=True, address="10.0.0.1"))
     print(copa_sender_cmd("10.0.0.1", output_file="logs/name.txt"))

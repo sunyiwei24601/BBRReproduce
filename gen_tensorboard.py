@@ -3,28 +3,53 @@ from torch.utils.tensorboard import SummaryWriter
 import csv
 import collections
     
-# reader = csv.DictReader(open('analysis.csv'))
-reader = csv.DictReader(open('analysis_microsecond.csv'))
-dic = collections.defaultdict(dict)
+def translate_host(hostname):
+    """translate hostname 
+        from s2-eth2 -> s2-receiver1
+        from s1-eth2 -> s1-receiver1
+    Args:
+        hostname (_type_): _description_
 
-for row in reader:
-    """seperate rows by hosts and experiment_ids
-    e.g. {
-        's1-eth1': {
-            'experimnet_1': [row1, row2],
-            'experiment_2': [row3, row4]
-        }
-    }
+    Returns:
+        _type_: _description_
     """
-    host = row['host']
-    tag = row['experiment_id']
-    if not dic[host].get(tag):
-        dic[host][tag] = [row]
-    else:
-        dic[host][tag].append(row) 
+    if hostname[0] != 's':
+        return hostname
+    elif hostname == 's1-eth1':
+        return "s1->s2"
+    elif hostname == 's2-eth1':
+        return "s2->s1"
+    elif hostname[:2] == "s2":
+        hostnum = int(hostname.split("eth")[1])
+        return f"s2->receiver{hostnum-1}"
+    elif hostname[:2] == "s1":
+        hostnum = int(hostname.split("eth")[1])
+        return f"sender{hostnum-1}->s1"
+    
+    
+    return hostname
 
+def classify_logs(filename='analysis_microsecond.csv'):
+    reader = csv.DictReader(open(filename))
+    dic = collections.defaultdict(dict)
+    for row in reader:
+        """seperate rows by hosts and experiment_ids
+        e.g. {
+            's1-eth1': {
+                'experimnet_1': [row1, row2],
+                'experiment_2': [row3, row4]
+            }
+        }
+        """
+        host = translate_host(row['host'])
+        tag = row['experiment_id']
+        if not dic[host].get(tag):
+            dic[host][tag] = [row]
+        else:
+            dic[host][tag].append(row)
+    return dic
 
-def write_tf_logs(aggregate_step=1):
+def write_tf_logs(dic, aggregate_step=1):
     TF_LOG_PATH = "tf_logs"
     TF_LOG_PATH = TF_LOG_PATH + f"_{aggregate_step}"
     if os.path.exists(TF_LOG_PATH):
@@ -39,7 +64,6 @@ def write_tf_logs(aggregate_step=1):
             for row in aggregated_rows:
                 tag = row['experiment_id']
                 step = int(row['timestamp']) - start_timestamp
-                host = row['host']
                 in_num = float(row['in_num'])
                 out_num = float(row['out_num'])
                 if row['in_unit'] == 'Kb/s':
@@ -70,8 +94,8 @@ def aggregate_rows(rows, aggregate_step=1):
         cur_rows[0]['out_num'] = out_num
         result.append(cur_rows[0])
     return result
-    
 
 if __name__ == '__main__':
-    write_tf_logs(10)
+    dic = classify_logs('analysis_microsecond.csv')
+    write_tf_logs(dic, 10)
     
