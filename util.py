@@ -32,7 +32,6 @@ def iperf_cmd(side="client",address="", interval=1, port=None, time=15, window_s
             command += f"> {output_file} 2>&1 "
     return command + "&"
 
-
 genericCC_PATH = '~/Desktop/genericCC'
 
 def copa_sender_cmd(serverip="", offduration=0, onduration=10000, 

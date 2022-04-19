@@ -16,11 +16,9 @@ import _thread
 # MININET_PATH = '/root/mininet'
 LOG_PATH = 'logs/'
 
-
 class MyTopo(Topo):
     def build(self, n=2, delay="10ms", loss=0, bw=10, jitter=None):
         """create topology by specified parameters
-
         Args:
             n (int, optional): nums of host pairs(n receiver and n sender). Defaults to 2.
             delay (str, optional): transmit delay (e.g. '1ms' ). Defaults to "10ms".
@@ -31,20 +29,28 @@ class MyTopo(Topo):
         senderHosts = [self.addHost(f'hs{x}') for x in range(1, n+1)]
         receiverHosts = [self.addHost(f'hr{x}') for x in range(1, n+1)]
         s1 = self.addSwitch('s1')
-        n = 1
+        s2 = self.addSwitch('s2')
+        self.addLink(s1, s2, delay=delay, loss=loss, bw=bw, jitter=jitter)
         for senderHost in senderHosts:
             #link configuration could refer to mininet.link.config function
             self.addLink(senderHost, s1, delay=delay, loss=loss, bw=bw, jitter=jitter)
-            n+=1
         for recevierHost in receiverHosts:
-            self.addLink(recevierHost, s1, delay=delay, loss=loss, bw=bw, jitter=jitter)
+            self.addLink(recevierHost, s2, delay=delay, loss=loss, bw=bw, jitter=jitter)
 
 class CCTest():
-    def __init__(self, clean_logs=False):
+    def __init__(self, clean_logs=False, monitor_type="both", DEBUG=False):
+        """
+        Args:
+            clean_logs (bool, optional): _description_. Defaults to False.
+            monitor_type (str, optional): The monitor tool to use, 'ifstat' use to record by 100 microsecond
+            'ethstats' use to record by second. Defaults to "both".
+        """
+        self.monitor_type = monitor_type
         self.clean_logs = clean_logs
+        self.DEBUG = DEBUG
         pass
     
-    def test_single_cc(self, cctype="cubic", n=2, delay="10ms", loss=0, bw=10, jitter=None, duration=60):
+    def test_single_cc(self, cctype="cubic", n=2, delay="10ms", loss=0, bw=10, jitter=None, duration=60, start_delay=0):
         """create topology based on parameter, running iperf test between pairs, write the throughput records into files 
         Args:
             cctype(str): the algorithm used in test, options: "cubic", "bbr", "copa", "reno"
@@ -54,37 +60,30 @@ class CCTest():
             bw (_type_, optional): _description_. Defaults to None.
             jitter (_type_, optional): _description_. Defaults to None.
             duration(int): the last time for the test. Defaults to 60 seconds.
+            start_delay(float): different lines start one by one with delay, if set 0, all the connection will start at the same time.
         """
         net = self.generate_network(n, bw, delay, loss, jitter)
         
+        #create log dir name
         time_id = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) 
-        parameter_string = f"{cctype}_{n}hosts_delay={delay}_loss={loss}_bw={bw}_duration={duration}"
+        parameter_string = f"{cctype}_{n}hosts_delay={delay}_loss={loss}_bw={bw}_duration={duration}_start_delay={start_delay}"
         print(f"current Test: single cc algorithm test paramets: {parameter_string}")
         logs_dirname = f"./{LOG_PATH}" + time_id + "_" + parameter_string
-
         os.makedirs(logs_dirname, exist_ok=True)
         
-        s1 = net.getNodeByName('s1')
-        s1.cmd(f'ethstats -t -n 1 -c {duration+5} > {logs_dirname}/ethstats.log  2>&1 &')
+        self.monitor_network(net.getNodeByName('s2'), logs_dirname)
         
-        # start a new interactive cmd to debug
-        # _thread.start_new_thread(lambda:CLI(net), () )
-        for i in range(1, n+1):
-            senderHost, receiverHost = net.getNodeByName(f'hs{i}', f'hr{i}')
-            if cctype in ["cubic", "bbr"]:
-                self.run_kernel_test(senderHost, receiverHost, cctype, logs_dirname, duration)
-            elif cctype == "copa":
-                self.run_copa_test(senderHost, receiverHost, cctype, logs_dirname, duration)
-            else:
-                print("Unknown CC Algorithm: ", cctype)
+        # run the tests
+        cctypes = [cctype] * n
+        self.run_test_by_ctype(cctypes, net, start_delay, logs_dirname)
                 
-        sleep(duration + 5 )
+        sleep(duration + 5 + start_delay * n )
         net.stop()
         
         if self.clean_log:
             self.clean_log(logs_dirname)
     
-    def test_multi_cc(self, cc1, cc2, cc1_host_n=1, cc2_host_n=1, delay="10ms", loss=0, bw=10, jitter=None, duration=60):
+    def test_multi_cc(self, cc1, cc2, cc1_host_n=1, cc2_host_n=1, delay="10ms", loss=0, bw=10, jitter=None, duration=60, start_delay=0):
         """like test_single_cc, but use different cc algorithms on hosts
         Args:
             cc1 (_type_): first cc algorithm,  could be "cubic", "bbr", "copa", "reno", "bbrplus"
@@ -95,29 +94,20 @@ class CCTest():
         """
         net = self.generate_network(cc1_host_n + cc2_host_n, bw, delay, loss, jitter)
         
+        #create log dir name
         time_id = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) 
-        parameter_string = f"{cc1}{cc1_host_n}_{cc2}{cc2_host_n}_delay={delay}_loss={loss}_bw={bw}_duration={duration}"
+        parameter_string = f"{cc1}{cc1_host_n}_{cc2}{cc2_host_n}_delay={delay}_loss={loss}_bw={bw}_duration={duration}_start_delay={start_delay}"
         print(f"current Test: single cc algorithm test paramets: {parameter_string}")
         logs_dirname = "./logs/" + time_id + "_" + parameter_string
-
         os.makedirs(logs_dirname, exist_ok=True)
         
+        self.monitor_network(net.getNodeByName('s2'), logs_dirname)
         
-        s1 = net.getNodeByName('s1')
-        s1.cmd(f'ethstats -t -n 1 -c {duration+5} > {logs_dirname}/ethstats.log  2>&1 &')
-        
+        # run the tests
         cctypes = [cc1] * cc1_host_n + [cc2] * cc2_host_n
-        for _, cctype in enumerate(cctypes):
-            i = _ + 1
-            senderHost, receiverHost = net.getNodeByName(f'hs{i}', f'hr{i}')
-            if cctype in ["cubic", "bbr", "bbrplus"]:
-                self.run_kernel_test(senderHost, receiverHost, cctype, logs_dirname, duration)
-            elif cctype == "copa":
-                self.run_copa_test(senderHost, receiverHost, cctype, logs_dirname, duration)
-            else:
-                print("Unknown CC Algorithm: ", cctype)
+        self.run_test_by_ctype(cctypes, net, start_delay, logs_dirname)
                 
-        sleep(duration + 5 )
+        sleep(duration + 5 + start_delay * (cc1_host_n + cc2_host_n)) #
         net.stop()
         if self.clean_log:
             self.clean_log(logs_dirname)
@@ -130,6 +120,9 @@ class CCTest():
         print("links: ", topo.links())
         print("hosts: ", topo.hosts())
         net.start()
+        # start a new interactive cmd to debug
+        if self.DEBUG:
+            _thread.start_new_thread(lambda:CLI(net), () )
         return net
 
     def run_copa_test(self, senderHost, receiverHost, cctype, logs_dirname, duration):
@@ -150,7 +143,7 @@ class CCTest():
         receiverHost.cmd(iperf_cmd(side="server"))
         # print(f"{receiverHost.name} receiver init finished {time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}")
 
-        senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=output_file))
+        senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=output_file, interval=0.1))
         # print(f"{senderHost.name} sender init finished {time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}")
 
     def clean_log(self, logs_dirname):
@@ -159,7 +152,37 @@ class CCTest():
             for file in del_list:
                 os.remove(os.path.join(logs_dirname, file))
             os.removedirs(logs_dirname)
-        
+    
+    def monitor_network(self, s2, logs_dirname):
+        """monitor the network traffic by commands
+
+        Args:
+            s2 (_type_): switch object
+            logs_dirname (_type_): 
+        """
+        if self.monitor_type in ["ifstat", "both"]:
+            s2.cmd(f'ifstat -t -a -z -l -n -T -b -q 0.1 {(duration+5) * 10} > {logs_dirname}/ifstat.log  2>&1 &')
+        if self.monitor_type in ["ethstats", "both"]:
+            s2.cmd(f'ethstats -t -n 1 -c {duration+5} > {logs_dirname}/ethstats.log  2>&1 &')
+    
+    def run_test_by_ctype(self, cctypes, net, start_delay, logs_dirname):
+        for _, cctype in enumerate(cctypes):
+            i = _ + 1
+            senderHost, receiverHost = net.getNodeByName(f'hs{i}', f'hr{i}')
+            if cctype in ["cubic", "bbr", "bbrplus"]:
+                _thread.start_new_thread(
+                    CCTest.run_kernel_test, (self, senderHost, receiverHost, cctype, logs_dirname, duration)
+                )
+                # self.run_kernel_test(senderHost, receiverHost, cctype, logs_dirname, duration)
+            elif cctype == "copa":
+                _thread.start_new_thread(
+                    CCTest.run_copa_test, (self, senderHost, receiverHost, cctype, logs_dirname, duration)
+                )
+                # self.run_copa_test(senderHost, receiverHost, cctype, logs_dirname, duration)
+            else:
+                print("Unknown CC Algorithm: ", cctype)
+            time.sleep(start_delay)
+                    
 if __name__ == '__main__':
     n = 3
     duration = 30
@@ -167,12 +190,12 @@ if __name__ == '__main__':
     bw = 10 #mbps
     loss = 3
     jitter = "200ms"
-    
+        
     # use this line to write log to trash dir, easier to clean logs
     LOG_PATH = "logs/trash/" 
-    t = CCTest(clean_logs=False)
+    t = CCTest(clean_logs=False, DEBUG=False)
     
-    t.test_single_cc("copa", n=1, delay='10ms', loss=3, bw=10, jitter=None, duration=10)
+    t.test_single_cc("cubic", n=2, delay='10ms', loss=0, bw=10, jitter=None, duration=10)
     # t.test_multi_cc("copa", "cubic", cc1_host_n=1, cc2_host_n=1, duration=10, bw=bw, delay=delay, loss=loss)
 
     
