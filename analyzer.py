@@ -10,7 +10,6 @@ log_ifstat_file = 'analysis_microsecond.csv'
 fieldnames = ['experiment_id','timestamp', 'host', 'in_num', 'in_unit', 'out_num', 'out_unit', 'in_pac_num', 'in_pac_unit',
         'out_pac_num', 'out_pac_unit']
 
-
 def timestr2int(timestr):
     """convert time str into time int so we can calculate the time stamp
     possible bug: 11:59:59 will  be larger than 00:00:00
@@ -158,4 +157,3 @@ def extract_save_log(log_type='ifstat'):
 if __name__ == '__main__':
     extract_save_log('ifstat')
     extract_save_log('ethstats')
-

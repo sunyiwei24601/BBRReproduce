@@ -33,7 +33,7 @@ class MyTopo(Topo):
         self.addLink(s1, s2, delay=delay, loss=loss, bw=bw, jitter=jitter)
         for senderHost in senderHosts:
             #link configuration could refer to mininet.link.config function
-            self.addLink(senderHost, s1, delay=delay, loss=loss, bw=bw, jitter=jitter)
+            self.addLink(senderHost, s1, delay=delay, loss=0, bw=bw, jitter=jitter)
         for recevierHost in receiverHosts:
             self.addLink(recevierHost, s2, delay=delay, loss=loss, bw=bw, jitter=jitter)
 

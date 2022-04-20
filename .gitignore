@@ -133,3 +133,4 @@ dmypy.json
 .vscode/
 tf_logs*/
 logs/
+network/

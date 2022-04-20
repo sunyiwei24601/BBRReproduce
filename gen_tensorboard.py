@@ -25,8 +25,6 @@ def translate_host(hostname):
     elif hostname[:2] == "s1":
         hostnum = int(hostname.split("eth")[1])
         return f"sender{hostnum-1}->s1"
-    
-    
     return hostname
 
 def classify_logs(filename='analysis_microsecond.csv'):
@@ -70,7 +68,7 @@ def write_tf_logs(dic, aggregate_step=1):
                     in_num /= 1024 
                 if row['out_unit'] == 'Kb/s':
                     out_num /= 1024 
-                if host[:2] == 's2':
+                if host[:2] == 's2' or host == 's1->s2':
                     writer.add_scalar(tag, out_num, step)
                 else:
                     writer.add_scalar(tag, in_num, step)
