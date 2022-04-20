@@ -2,6 +2,7 @@ from time import sleep
 import sys
 MININET_PATH = '/home/kyle/Desktop/mininet'
 sys.path.append(MININET_PATH)
+sys.path.append('~/mininet')
 from mininet.net import Mininet
 from mininet.clean import cleanup
 from mininet.node import Node
@@ -195,7 +196,7 @@ if __name__ == '__main__':
     LOG_PATH = "logs/trash/" 
     t = CCTest(clean_logs=False, DEBUG=False)
     
-    t.test_single_cc("cubic", n=2, delay='10ms', loss=0, bw=10, jitter=None, duration=10)
+    t.test_single_cc("bbr", n=1, delay='10ms', loss=0, bw=10, jitter=None, duration=10)
     # t.test_multi_cc("copa", "cubic", cc1_host_n=1, cc2_host_n=1, duration=10, bw=bw, delay=delay, loss=loss)
 
     
