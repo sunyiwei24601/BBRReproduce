@@ -79,7 +79,7 @@ def set_kernel_cc_algorithm(host, algorithm):
         algorithm (_type_): available kernel tcp congestion control algorithm: cubic, bbr, reno
     """
     print("Setting the Congestion Control Algorithm For {} = {}".format(host.name, algorithm))
-    result = host.cmd("sysctl net.ipv4.tcp_congestion_control={}".format(algorithm))
+    result = host.cmd("sysctl -w net.ipv4.tcp_congestion_control={}".format(algorithm))
     
     print("Setting Result: ", result)
     
