@@ -9,7 +9,7 @@ from mininet.node import Node
 from mininet.topo import Topo
 from mininet.cli import CLI
 from mininet.link import TCLink, TCIntf
-from util import iperf_cmd, genericCC_PATH, copa_sender_cmd, set_kernel_cc_algorithm
+from util import iperf_cmd, genericCC_PATH, copa_sender_cmd, set_kernel_cc_algorithm, print_t
 import time
 import os
 import _thread
@@ -74,7 +74,7 @@ class CCTest():
         #create log dir name
         time_id = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) 
         parameter_string = f"{cctype}_{n}hosts_delay={delay}_loss={loss}_bw={bw}_duration={duration}_start_delay={start_delay}_{KERNEL_VERSION}"
-        print(f"current Test: single cc algorithm test paramets: {parameter_string}")
+        print_t("stress", f"current Test: single cc algorithm test paramets: {parameter_string}")
         logs_dirname = f"./{LOG_PATH}" + time_id + "_" + parameter_string
         os.makedirs(logs_dirname, exist_ok=True)
         
@@ -104,7 +104,7 @@ class CCTest():
         #create log dir name
         time_id = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) 
         parameter_string = f"{cc1}{cc1_host_n}_{cc2}{cc2_host_n}_delay={delay}_loss={loss}_bw={bw}_duration={duration}_start_delay={start_delay}_{KERNEL_VERSION}"
-        print(f"current Test: single cc algorithm test paramets: {parameter_string}")
+        print_t("stress", f"current Test: single cc algorithm test paramets: {parameter_string}")
         logs_dirname = "./logs/" + time_id + "_" + parameter_string
         os.makedirs(logs_dirname, exist_ok=True)
         
@@ -190,7 +190,7 @@ class CCTest():
                 )
                 # self.run_copa_test(senderHost, receiverHost, cctype, logs_dirname, duration)
             else:
-                print(f"\033[0;31mUnknown CC Algorithm: {cctype}\033[0m")
+                print_t("warning", f"Unknown CC Algorithm: {cctype}")
             time.sleep(start_delay)
                     
 if __name__ == '__main__':

@@ -93,6 +93,26 @@ def set_kernel_cc_algorithm(host, algorithm):
     result = host.cmd("sysctl -w net.ipv4.tcp_congestion_control={}".format(algorithm))
     
     print("Setting Result: ", result)
+
+def print_t(t="info", message=""):
+    if t == "info":
+        m = f"\033[0;30m{message}\033[0m"
+    elif t == "warning":
+        m = f"\033[0;31m{message}\033[0m"
+    elif t == "stress":
+        m = f"\033[0;32m{message}\033[0m"
+    print(m)
+    return m
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
 if __name__ == '__main__':
     print(iperf_cmd(isClient=True, address="10.0.0.1"))

@@ -1,6 +1,7 @@
 import json
 import csv
 import os
+from util import print_t
 
 rec_log_file = "analysis_rec.csv"
 send_log_file = "analysis_send.csv"
@@ -51,7 +52,7 @@ def extract_save_send_log(dirnames):
                 try:
                     records = extract_iperf_send_log(os.path.join(logs_path, dirname, filename))
                 except:
-                    print(f"error filename: {dirname}/{filename}")
+                    print_t("warning", f"error filename: {dirname}/{filename}")
                     continue
                 for record in records:
                     record['host'] = filename
@@ -74,7 +75,7 @@ def extract_save_rec_log(dirnames):
                 try:
                     records = extract_iperf_rec_log(os.path.join(logs_path, dirname, filename))
                 except:
-                    print(f"\033[0;31merror filename: {dirname}/{filename}\033[0m")
+                    print_t("warning", f"error filename: {dirname}/{filename}")
                     continue
                 for record in records:
                     record['host'] = filename

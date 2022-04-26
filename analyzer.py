@@ -2,7 +2,7 @@ import csv
 import os
 import collections
 import json
-from pip import main
+from util import *
 repository_dir = "/home/kyle/Desktop/CopaReproduce"
 logs_path = f"{repository_dir}/logs"
 
