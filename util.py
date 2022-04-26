@@ -1,6 +1,7 @@
 genericCC_PATH = '~/Desktop/genericCC'
 
-def iperf_cmd(side="client",address="", interval=1, port=None, time=15, window_size=None, output_file=""):
+def iperf_cmd(side="client",address="", interval=1, port=None, time=15, window_size=None, output_file="",
+              verbose=True, json=True, algorithm=None):
     """a tool for concating parameters for iperf command, return the command string
         further parameters explanation found in https://iperf.fr/iperf-doc.php
     Args:
@@ -8,13 +9,15 @@ def iperf_cmd(side="client",address="", interval=1, port=None, time=15, window_s
         address (str, optional): Only for client side, the address of target server. Defaults to "".
         interval (int, optional):Only for client side,  the interval of showing bandwidth. Defaults to '1' second.
         port (_type_, optional): The port to communicate. Defaults to None(5001).
-        time (int, optional): test last time(seconds). Defaults to 15.
+        time (int, optional): test last time(seconds), only for sender. Defaults to 15.
         window_size (_type_, optional): the TCP window Size. Defaults to None.
-
+        algorithm: Specify the tcp congestion control algorithm to use (cubic, reno, bbr), bbr2 only available on kernel with bbr2
+        json: output in format of json file
+        verbose: output information in details
     Returns:
         _type_: _description_
     """
-    command = "iperf "
+    command = "iperf3 "
     if side == "server":
         command += "-s "
         if port:
@@ -23,14 +26,22 @@ def iperf_cmd(side="client",address="", interval=1, port=None, time=15, window_s
         command += "-c "
         if address:
             command += f"{address} "
-        if interval:
-            command += f"-i {interval} "
         if time:
             command += f"-t {time} "
-        if window_size:
-            command += f"-w {window_size} "
-        if output_file:
-            command += f"> {output_file} 2>&1 "
+        if algorithm:
+            command += f"-C {algorithm} "
+        
+    if interval:
+        command += f"-i {interval} "
+    if window_size:
+        command += f"-w {window_size} "
+    if output_file:
+        command += f"--logfile {output_file} "
+    if verbose:
+        command += "-V "
+    if json:
+        command += "-J "
+    
     return command + "&"
 
 def copa_sender_cmd(serverip="", offduration=0, onduration=10000, 

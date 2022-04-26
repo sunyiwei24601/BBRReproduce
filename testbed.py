@@ -13,10 +13,11 @@ from util import iperf_cmd, genericCC_PATH, copa_sender_cmd, set_kernel_cc_algor
 import time
 import os
 import _thread
+import platform
 
 # MININET_PATH = '/root/mininet'
 LOG_PATH = 'logs/'
-
+KERNEL_VERSION = platform.uname().release
 class MyTopo(Topo):
     def build(self, n=2, delay="10ms", loss=0, bw=10, jitter=None):
         """create topology by specified parameters
@@ -67,16 +68,16 @@ class CCTest():
         
         #create log dir name
         time_id = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) 
-        parameter_string = f"{cctype}_{n}hosts_delay={delay}_loss={loss}_bw={bw}_duration={duration}_start_delay={start_delay}"
+        parameter_string = f"{cctype}_{n}hosts_delay={delay}_loss={loss}_bw={bw}_duration={duration}_start_delay={start_delay}_{KERNEL_VERSION}"
         print(f"current Test: single cc algorithm test paramets: {parameter_string}")
         logs_dirname = f"./{LOG_PATH}" + time_id + "_" + parameter_string
         os.makedirs(logs_dirname, exist_ok=True)
         
-        self.monitor_network(net.getNodeByName('s2'), logs_dirname)
+        self.monitor_network(net.getNodeByName('s2'), logs_dirname, duration=duration)
         
         # run the tests
         cctypes = [cctype] * n
-        self.run_test_by_ctype(cctypes, net, start_delay, logs_dirname)
+        self.run_test_by_ctype(cctypes, net, start_delay, logs_dirname, duration=duration)
                 
         sleep(duration + 5 + start_delay * n )
         net.stop()
@@ -97,16 +98,16 @@ class CCTest():
         
         #create log dir name
         time_id = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()) 
-        parameter_string = f"{cc1}{cc1_host_n}_{cc2}{cc2_host_n}_delay={delay}_loss={loss}_bw={bw}_duration={duration}_start_delay={start_delay}"
+        parameter_string = f"{cc1}{cc1_host_n}_{cc2}{cc2_host_n}_delay={delay}_loss={loss}_bw={bw}_duration={duration}_start_delay={start_delay}_{KERNEL_VERSION}"
         print(f"current Test: single cc algorithm test paramets: {parameter_string}")
         logs_dirname = "./logs/" + time_id + "_" + parameter_string
         os.makedirs(logs_dirname, exist_ok=True)
         
-        self.monitor_network(net.getNodeByName('s2'), logs_dirname)
+        self.monitor_network(net.getNodeByName('s2'), logs_dirname, duration=duration)
         
         # run the tests
         cctypes = [cc1] * cc1_host_n + [cc2] * cc2_host_n
-        self.run_test_by_ctype(cctypes, net, start_delay, logs_dirname)
+        self.run_test_by_ctype(cctypes, net, start_delay, logs_dirname, duration=duration)
                 
         sleep(duration + 5 + start_delay * (cc1_host_n + cc2_host_n)) #
         net.stop()
@@ -136,15 +137,18 @@ class CCTest():
         # print(f"{senderHost.name} sender init finished {time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}")
 
     def run_kernel_test(self, senderHost, receiverHost, cctype, logs_dirname, duration):
-        # first set the tcp cc algorithm on host
-        set_kernel_cc_algorithm(senderHost, cctype)
+        # first set the tcp cc algorithm on host, duplicated since iperf3 can speficy the algorithm used
+        # set_kernel_cc_algorithm(senderHost, cctype)
         
         # for cubic and bbr, use iperf scheme
-        output_file = logs_dirname + f'/{senderHost.name}_iperf.log'
-        receiverHost.cmd(iperf_cmd(side="server"))
+        sender_output_file = logs_dirname + f'/{senderHost.name}_iperf.log'
+        receiver_output_file = logs_dirname + f'/{receiverHost.name}_iperf.log'
+        receiverHost.cmd(iperf_cmd(side="server", interval=0.02, output_file=receiver_output_file, verbose=True, json=True))
         # print(f"{receiverHost.name} receiver init finished {time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}")
 
-        senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=output_file, interval=0.1))
+        senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=sender_output_file, interval=0.01,
+                                 algorithm=cctype, verbose=True, json=True
+                                 ))
         # print(f"{senderHost.name} sender init finished {time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}")
 
     def clean_log(self, logs_dirname):
@@ -154,7 +158,7 @@ class CCTest():
                 os.remove(os.path.join(logs_dirname, file))
             os.removedirs(logs_dirname)
     
-    def monitor_network(self, s2, logs_dirname):
+    def monitor_network(self, s2, logs_dirname, duration):
         """monitor the network traffic by commands
 
         Args:
@@ -166,7 +170,7 @@ class CCTest():
         if self.monitor_type in ["ethstats", "both"]:
             s2.cmd(f'ethstats -t -n 1 -c {duration+5} > {logs_dirname}/ethstats.log  2>&1 &')
     
-    def run_test_by_ctype(self, cctypes, net, start_delay, logs_dirname):
+    def run_test_by_ctype(self, cctypes, net, start_delay, logs_dirname, duration):
         for _, cctype in enumerate(cctypes):
             i = _ + 1
             senderHost, receiverHost = net.getNodeByName(f'hs{i}', f'hr{i}')
@@ -186,17 +190,17 @@ class CCTest():
                     
 if __name__ == '__main__':
     n = 3
-    duration = 30
+    # duration = 30
     delay = "3ms"
     bw = 10 #mbps
     loss = 3
     jitter = "200ms"
         
     # use this line to write log to trash dir, easier to clean logs
-    LOG_PATH = "logs/trash/" 
+    # LOG_PATH = "logs/trash/" 
     t = CCTest(clean_logs=False, DEBUG=False)
     
-    t.test_single_cc("bbr", n=1, delay='10ms', loss=0, bw=10, jitter=None, duration=10)
+    t.test_single_cc("bbr", n=1, delay='50ms', loss=0, bw=100, jitter=None, duration=10)
     # t.test_multi_cc("copa", "cubic", cc1_host_n=1, cc2_host_n=1, duration=10, bw=bw, delay=delay, loss=loss)
 
     

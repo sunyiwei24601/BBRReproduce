@@ -1,6 +1,7 @@
 import csv
 import os
 import collections
+import json
 from pip import main
 repository_dir = "/home/kyle/Desktop/CopaReproduce"
 logs_path = f"{repository_dir}/logs"
@@ -153,7 +154,7 @@ def extract_save_log(log_type='ifstat'):
             records = extract_ethstats_log(dirname)
         writer.writerows(records)
     csvfile.close()
-    
+
 if __name__ == '__main__':
     extract_save_log('ifstat')
     extract_save_log('ethstats')
