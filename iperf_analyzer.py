@@ -8,7 +8,10 @@ logs_path = "./logs"
 
 def extract_iperf_rec_log(filename):
     with open(filename) as f:
-        data = json.load(f)
+        content = f.readlines()
+        if content[-11] == "{\n":
+            content = content[:-11]
+        data = json.loads(''.join(content))        
     start = data['start']
     start_timestamp = start['timestamp']['timesecs']
     records = [_['sum'] for _ in data['intervals']]
@@ -21,7 +24,10 @@ def extract_iperf_rec_log(filename):
 
 def extract_iperf_send_log(filename):
     with open(filename) as f:
-        data = json.load(f)
+        content = f.readlines()
+        if content[-11] == "{\n":
+            content = content[:-11]
+        data = json.loads(''.join(content))
     start = data['start']
     start_timestamp = start['timestamp']['timesecs']
     records = [_['streams'][0] for _ in data['intervals']]
@@ -42,7 +48,11 @@ def extract_save_send_log(dirnames):
             filenames = os.listdir(os.path.join(logs_path, dirname))
             filenames = [filename for filename in filenames if filename[:2] == "hs"]
             for filename in filenames:
-                records = extract_iperf_send_log(os.path.join(logs_path, dirname, filename))
+                try:
+                    records = extract_iperf_send_log(os.path.join(logs_path, dirname, filename))
+                except:
+                    print(f"error filename: {dirname}/{filename}")
+                    continue
                 for record in records:
                     record['host'] = filename
                     record['experiment_id'] = dirname
@@ -61,7 +71,11 @@ def extract_save_rec_log(dirnames):
             filenames = os.listdir(os.path.join(logs_path, dirname))
             filenames = [filename for filename in filenames if filename[:2] == "hr"]
             for filename in filenames:
-                records = extract_iperf_rec_log(os.path.join(logs_path, dirname, filename))
+                try:
+                    records = extract_iperf_rec_log(os.path.join(logs_path, dirname, filename))
+                except:
+                    print(f"error filename: {dirname}/{filename}")
+                    continue
                 for record in records:
                     record['host'] = filename
                     record['experiment_id'] = dirname

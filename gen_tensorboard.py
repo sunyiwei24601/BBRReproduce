@@ -19,6 +19,8 @@ def translate_host(hostname):
         return "s1->s2"
     elif hostname == 's2-eth1':
         return "s2->s1"
+    elif hostname == "s1" or hostname == "s2":
+        return hostname
     elif hostname[:2] == "s2":
         hostnum = int(hostname.split("eth")[1])
         return f"s2->receiver{hostnum-1}"
@@ -95,5 +97,5 @@ def aggregate_rows(rows, aggregate_step=1):
 
 if __name__ == '__main__':
     dic = classify_logs('analysis_microsecond.csv')
-    write_tf_logs(dic, 10)
+    write_tf_logs(dic, 1)
     

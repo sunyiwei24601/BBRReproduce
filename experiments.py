@@ -9,13 +9,13 @@ def test_single_algo_multi_delay(n=2, duration=30, bw=10, loss=0):
         t.test_single_cc("copa", n=n, duration=duration, bw=bw, delay=delay, loss=loss)
 
 def test_single_algo_multi_loss(n=2, duration=30, bw=10, delay='20ms', algo=['cubic', 'bbr']):
-    for loss in [0, 0.001, 0.01, 0.1, 1, 1, 2, 5, 10, 20, 30, 50]:
+    for loss in [0, 0.001, 0.01, 0.1, 1, 1, 2, 5, 10, 20, 30]:
         for ctype in algo:
             t.test_single_cc(ctype, n=n, duration=duration, bw=bw, delay=delay, loss=loss)
 
 
 def test_single_algo_multi_host(loss=3, duration=30, bw=10, delay='20ms', algo=['cubic', 'bbr'], start_delay=0.5):
-    for n in [2, 5]:
+    for n in [2, 3, 4, 5]:
         for ctype in algo:
             t.test_single_cc(ctype, n=n, duration=duration, bw=bw, delay=delay, loss=loss, start_delay=start_delay)
 
@@ -43,3 +43,4 @@ if __name__ == '__main__':
     
     # 测试bbr和cubic的竞争效果
     test_multi_algo_multi_hosts('cubic', 'bbr', loss=0.001)
+    test_multi_algo_multi_hosts('cubic', 'bbr', loss=0.1)

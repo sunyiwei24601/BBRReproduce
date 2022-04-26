@@ -141,7 +141,6 @@ def extract_save_log(log_type='ifstat'):
         writer.writeheader()
     
     dirnames = os.listdir(logs_path)
-    logfile = log_ifstat_file
     csvfile = open(logfile, 'a')
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     
