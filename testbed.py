@@ -185,7 +185,7 @@ class CCTest():
                 )
                 # self.run_copa_test(senderHost, receiverHost, cctype, logs_dirname, duration)
             else:
-                print("Unknown CC Algorithm: ", cctype)
+                print(f"\033[0;31mUnknown CC Algorithm: {cctype}\033[0m")
             time.sleep(start_delay)
                     
 if __name__ == '__main__':

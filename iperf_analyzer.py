@@ -74,7 +74,7 @@ def extract_save_rec_log(dirnames):
                 try:
                     records = extract_iperf_rec_log(os.path.join(logs_path, dirname, filename))
                 except:
-                    print(f"error filename: {dirname}/{filename}")
+                    print(f"\033[0;31merror filename: {dirname}/{filename}\033[0m")
                     continue
                 for record in records:
                     record['host'] = filename
