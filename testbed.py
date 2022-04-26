@@ -32,12 +32,17 @@ class MyTopo(Topo):
         receiverHosts = [self.addHost(f'hr{x}') for x in range(1, n+1)]
         s1 = self.addSwitch('s1')
         s2 = self.addSwitch('s2')
-        self.addLink(s1, s2, delay=delay, loss=loss, bw=bw, jitter=jitter)
+        
+        # split delay into 2 links
+        delay = int(delay[:-2])/2
+        dealy = f"{delay}ms"
+        
+        self.addLink(s1, s2, delay="1ms", loss=loss, bw=bw, jitter=jitter)
         for senderHost in senderHosts:
             #link configuration could refer to mininet.link.config function
             self.addLink(senderHost, s1, delay=delay, loss=0, bw=bw, jitter=jitter)
         for recevierHost in receiverHosts:
-            self.addLink(recevierHost, s2, delay=delay, loss=loss, bw=bw, jitter=jitter)
+            self.addLink(recevierHost, s2, delay=delay, loss=0, bw=bw, jitter=jitter)
 
 class CCTest():
     def __init__(self, clean_logs=False, monitor_type="both", DEBUG=False):
