@@ -143,10 +143,10 @@ class CCTest():
         # for cubic and bbr, use iperf scheme
         sender_output_file = logs_dirname + f'/{senderHost.name}_iperf.log'
         receiver_output_file = logs_dirname + f'/{receiverHost.name}_iperf.log'
-        receiverHost.cmd(iperf_cmd(side="server", interval=0.02, output_file=receiver_output_file, verbose=True, json=True))
+        receiverHost.cmd(iperf_cmd(side="server", interval=0.1, output_file=receiver_output_file, verbose=True, json=True))
         # print(f"{receiverHost.name} receiver init finished {time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}")
 
-        senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=sender_output_file, interval=0.01,
+        senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=sender_output_file, interval=0.03,
                                  algorithm=cctype, verbose=True, json=True
                                  ))
         # print(f"{senderHost.name} sender init finished {time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}")
@@ -174,7 +174,7 @@ class CCTest():
         for _, cctype in enumerate(cctypes):
             i = _ + 1
             senderHost, receiverHost = net.getNodeByName(f'hs{i}', f'hr{i}')
-            if cctype in ["cubic", "bbr", "bbrplus"]:
+            if cctype in ["cubic", "bbr", "bbrplus", "bbr2"]:
                 _thread.start_new_thread(
                     CCTest.run_kernel_test, (self, senderHost, receiverHost, cctype, logs_dirname, duration)
                 )
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     # LOG_PATH = "logs/trash/" 
     t = CCTest(clean_logs=False, DEBUG=False)
     
-    t.test_single_cc("bbr", n=1, delay='50ms', loss=0, bw=100, jitter=None, duration=10)
+    t.test_single_cc("bbr", n=1, delay='40ms', loss=0, bw=100, jitter=None, duration=10)
     # t.test_multi_cc("copa", "cubic", cc1_host_n=1, cc2_host_n=1, duration=10, bw=bw, delay=delay, loss=loss)
 
     
