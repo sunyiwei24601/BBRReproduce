@@ -38,9 +38,10 @@ if __name__ == '__main__':
     test_single_algo_multi_loss(n=1)
     
     # 测试多个bbr同时竞争
-    test_single_algo_multi_host(loss=0.01, algo=['bbr'], start_delay=2)
-    test_single_algo_multi_host(loss=0.01, algo=['bbr'], start_delay=1)
-    
+    test_single_algo_multi_host(loss=0.01, algo=['bbr'], start_delay=2, duration=60)
+    test_single_algo_multi_host(loss=0.01, algo=['bbr'], start_delay=1, duration=60)
+    test_single_algo_multi_host(loss=0.01, algo=['bbr'], start_delay=0, duration=60)
+
     # 测试bbr和cubic的竞争效果
     test_multi_algo_multi_hosts('cubic', 'bbr', loss=0.001)
     test_multi_algo_multi_hosts('cubic', 'bbr', loss=0.1)
