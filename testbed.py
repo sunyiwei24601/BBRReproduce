@@ -35,7 +35,7 @@ class MyTopo(Topo):
         
         # split delay into 2 links
         delay = int(delay[:-2])/2
-        dealy = f"{delay}ms"
+        delay = f"{delay}ms"
         
         self.addLink(s1, s2, delay="1ms", loss=loss, bw=bw, jitter=jitter)
         for senderHost in senderHosts:
