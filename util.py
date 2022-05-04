@@ -7,7 +7,7 @@ def iperf_cmd(side="client",address="", interval=1, port=None, time=15, window_s
     Args:
         side (str, optional): clinet or server. Defaults to client.
         address (str, optional): Only for client side, the address of target server. Defaults to "".
-        interval (int, optional):Only for client side,  the interval of showing bandwidth. Defaults to '1' second.
+        interval (int, optional):Only for client side,  the interval of showing bandwidth, at least 0.1. Defaults to '1' second.
         port (_type_, optional): The port to communicate. Defaults to None(5001).
         time (int, optional): test last time(seconds), only for sender. Defaults to 15.
         window_size (_type_, optional): the TCP window Size. Defaults to None.

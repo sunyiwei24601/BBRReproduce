@@ -151,7 +151,7 @@ class CCTest():
         receiverHost.cmd(iperf_cmd(side="server", interval=0.1, output_file=receiver_output_file, verbose=True, json=True))
         # print(f"{receiverHost.name} receiver init finished {time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}")
 
-        senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=sender_output_file, interval=0.03,
+        senderHost.cmd(iperf_cmd(address=receiverHost.IP(), time=duration, output_file=sender_output_file, interval=0.1,
                                  algorithm=cctype, verbose=True, json=True
                                  ))
         # print(f"{senderHost.name} sender init finished {time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime())}")
