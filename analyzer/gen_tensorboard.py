@@ -96,6 +96,6 @@ def aggregate_rows(rows, aggregate_step=1):
     return result
 
 if __name__ == '__main__':
-    dic = classify_logs('analysis_microsecond.csv')
+    dic = classify_logs('analysis_second.csv')
     write_tf_logs(dic, 1)
     
